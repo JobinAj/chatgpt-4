@@ -3,9 +3,19 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
 
 # Load the Hugging Face chat model
-MODEL_NAME = "mistralai/Mistral-7B-Instruct-v0.1"
+MODEL_NAME = "microsoft/phi-2"
+
+# Use CPU and optimize memory
+device = "cpu"  # t2.xlarge has no GPU
+torch_dtype = torch.float16 if torch.cuda.is_available() else torch.float32
+
+# Load tokenizer and model
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-model = AutoModelForCausalLM.from_pretrained(MODEL_NAME, torch_dtype=torch.float16, device_map="auto")
+model = AutoModelForCausalLM.from_pretrained(
+    MODEL_NAME, 
+    torch_dtype=torch_dtype,  # Use appropriate precision
+    device_map="auto"  # Automatically place on CPU
+)
 
 # Streamlit UI
 st.title("💬 Chatbot using Hugging Face")
@@ -29,8 +39,8 @@ if user_input:
         st.markdown(user_input)
 
     # Generate AI response
-    inputs = tokenizer(user_input, return_tensors="pt").to("cuda")
-    outputs = model.generate(**inputs, max_length=200)
+    inputs = tokenizer(user_input, return_tensors="pt").to(device)
+    outputs = model.generate(**inputs, max_length=100)  # Limit token length
     response = tokenizer.decode(outputs[0], skip_special_tokens=True)
 
     # Display AI response
